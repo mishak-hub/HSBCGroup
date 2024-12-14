@@ -9,7 +9,7 @@ def group_add(group_name):
     phone_numbers = []
 
     # Read phone numbers from the CSV file
-    with open('Samples/people.csv', 'rt') as f:
+    with open('MOVE Servants.csv', 'rt') as f:
         data = csv.DictReader(f)  # Use DictReader to handle column headers
         for row in data:
             if row['Phone Number']:  # Ensure the phone number column exists
