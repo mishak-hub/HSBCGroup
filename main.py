@@ -15,8 +15,8 @@ def group_add(group_name):
             if row['Phone Number']:  # Ensure the phone number column exists
                 phone_numbers.append(row['Phone Number'])  # Append phone numbers to the list
 
-    # Launch browser and open WhatsApp Web
-    driver = webdriver.Firefox()
+    # Launch Edge browser and open WhatsApp Web
+    driver = webdriver.Edge()  # Use Edge WebDriver
     driver.maximize_window()
     driver.get('https://web.whatsapp.com/')
     print("Please scan the QR code to log in to WhatsApp Web.")

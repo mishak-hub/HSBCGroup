@@ -7,3 +7,11 @@ This is based off the code seen here: https://github.com/CodeChefVIT/whatsapp-gr
 Rather than the CSV format described in the above project, the phone numbers can be selected with any format CSV by specifying the name/path of the CSV, and then the name of the column that contains the phone numbers.
 
 No need to save the contacts, but does require the CSV with the phone numbers, selenium, and the desktop version of Whatsapp.
+
+To run:
+Update path and CSV Column name.
+
+Download necessary libraries and selenium from:
+
+if you're on Windows:
+Run pip install -r requirements.txt
