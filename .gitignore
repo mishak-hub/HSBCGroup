@@ -3,3 +3,4 @@
 
 # Ignore config from now on
 config.py
+__pycache__/
