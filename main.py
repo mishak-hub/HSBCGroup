@@ -10,7 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 def add_members(driver, phone_numbers):
-    MAX_RETRIES = 2
+    MAX_RETRIES = 1
     for phone_number in phone_numbers:
         retry_count = 0
         while retry_count < MAX_RETRIES:
