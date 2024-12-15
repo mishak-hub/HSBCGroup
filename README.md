@@ -12,6 +12,7 @@ To run:
 Update path and CSV Column name.
 
 Download necessary libraries and selenium from: https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/?form=MA13LH
+
 Make sure to download the right version based off your Edge version which you can find by clicking the three ... -> Help and feedback -> About Microsoft Edge
 
 if you're on Windows:
