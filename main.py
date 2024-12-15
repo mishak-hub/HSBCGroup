@@ -4,107 +4,172 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.edge.service import Service
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+def add_members_re_re(driver, phone_numbers):
+    MAX_RETRIES = 3
+    for phone_number in phone_numbers:
+        retry_count = 0
+        while retry_count < MAX_RETRIES:
+            try:
+                print(f"Attempting to add {phone_number} (try {retry_count+1}/{MAX_RETRIES})...")
+
+                # Locate and clear the search bar
+                search_bar = WebDriverWait(driver, 3).until(
+                    EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+                )
+                search_bar.click()
+                search_bar.send_keys(Keys.CONTROL + "a")
+                search_bar.send_keys(Keys.BACKSPACE)
+                search_bar.send_keys(phone_number)
+
+                # Wait for search results
+                search_result = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, '//div[@role="option"]'))
+                )
+
+                # Check for "Already added" status
+                already_added = search_result.find_elements(By.XPATH, './/span[contains(text(), "already added")]')
+                if already_added:
+                    print(f"Contact {phone_number} is already in the group. Skipping.")
+                    break
+
+                # Click the contact to add
+                search_result.click()
+                print(f"Selected contact {phone_number}.")
+                break  # Success, move to next phone number
+
+            except Exception as e:
+                retry_count += 1
+                if retry_count == MAX_RETRIES:
+                    print(f"Failed to add {phone_number} after {MAX_RETRIES} attempts: {e}")
+
+    # Confirm additions
+    try:
+        confirm_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//span[@data-icon="checkmark-light"]'))
+        )
+        confirm_button.click()
+        print("All contacts added successfully.")
+    except Exception as e:
+        print(f"Failed to confirm additions: {e}")
+
 
 def add_members(driver, phone_numbers):
     for phone_number in phone_numbers:
         try:
             print(f"Adding {phone_number} to the group...")
-            # Locate the search bar in the "Add member" interface
-            search_bar = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, '//div[@title="Search name or number"]'))
-            )
-            
-            # Clear the search bar (if there's leftover text) and type the phone number
+            search_bar = WebDriverWait(driver, 5).until(
+    EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+)
             search_bar.clear()
             search_bar.send_keys(phone_number)
-            time.sleep(3)  # Wait for search results to load
+            time.sleep(10)  # Wait for search results
 
-            # Check if the contact exists in the search results
             try:
-                # Locate the search result for the contact
                 contact = driver.find_element(By.XPATH, f'//span[contains(text(), "{phone_number}")]')
-                
-                # Check if the contact is already added to the group
                 already_added = driver.find_elements(By.XPATH, '//span[text()="Already added to group"]')
                 if already_added:
                     print(f"Contact {phone_number} is already in the group. Skipping.")
                     continue
-                
-                # If not already added, click the checkbox to select the contact
                 contact.click()
-                print(f"Selected contact {phone_number} for addition.")
+                print(f"Selected contact {phone_number}.")
             except Exception:
                 print(f"Contact {phone_number} not found. Skipping.")
                 continue
-
         except Exception as e:
-            print(f"Error while adding {phone_number}: {e}")
+            print(f"Error adding {phone_number}: {e}")
             continue
 
-    # Click the checkmark to confirm adding members
     try:
         confirm_button = driver.find_element(By.XPATH, '//span[@data-icon="checkmark-light"]')
         confirm_button.click()
-        print("Confirmed addition of all selected members.")
+        print("All members added.")
     except Exception as e:
-        print("Failed to confirm member addition:", e)
+        print(f"Failed to confirm member addition: {e}")
+
+def add_members_re(driver, phone_numbers):
+    for phone_number in phone_numbers:
+        try:
+            print(f"Adding {phone_number} to the group...")
+            search_bar = WebDriverWait(driver, 3).until(
+                EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+            )
+            # Clear the search bar
+            search_bar.click()  # Focus on the search bar
+            search_bar.send_keys(Keys.CONTROL + "a")  # Select all text
+            search_bar.send_keys(Keys.BACKSPACE)      # Clear using backspace
+            search_bar.send_keys(phone_number)
+            
+            # Wait for the search results
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//div[@role="option"]'))
+            )
+            
+            try:
+                # Locate and click the contact
+                contact = driver.find_element(By.XPATH, f'//div[contains(@class, "matched-text") and contains(text(), "{phone_number}")]')
+                already_added = driver.find_elements(By.XPATH, '//span[contains(text(), "already added")]')
+                
+                if already_added:
+                    print(f"Contact {phone_number} is already in the group. Skipping.")
+                    continue
+                
+                contact.click()
+                print(f"Selected contact {phone_number}.")
+            except Exception:
+                print(f"Contact {phone_number} not found. Skipping.")
+                continue
+        except Exception as e:
+            print(f"Error adding {phone_number}: {e}")
+            continue
+
+    # Confirm additions
+    try:
+        confirm_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//span[@data-icon="checkmark-light"]'))
+        )
+        confirm_button.click()
+        print("All members added.")
+    except Exception as e:
+        print(f"Failed to confirm member addition: {e}")
 
 def group_add(group_name):
     phone_numbers = []
 
-    # Read phone numbers from the CSV file
     with open('MOVE Servants.csv', 'rt') as f:
-        data = csv.DictReader(f)  # Use DictReader to handle column headers
+        data = csv.DictReader(f)
         for row in data:
-            if row['Phone Number']:  # Ensure the phone number column exists
-                phone_numbers.append(row['Phone Number'])  # Append phone numbers to the list
+            if row['Phone Number']:
+                phone_numbers.append(row['Phone Number'])
 
-    # Launch Edge browser and open WhatsApp Web
-    
-    try: 
-        from config import WEBDRIVER_PATH, USER_DATA_DIR, PROFILE
-        #Configure Edge WebDriver
-        options = webdriver.EdgeOptions()
-        options.add_argument(f"user-data-dir={USER_DATA_DIR}")
-        options.add_argument(f"profile-directory={PROFILE}")
+    print("Falling back to QR code login.")
+    driver = webdriver.Edge()
         
-        # Launch Edge browser using WebDriver path and options
-        driver = webdriver.Edge(service=Service(WEBDRIVER_PATH), options=options)
-        print("Using persistent WebDriver configuration.")
-    except Exception as e:
-        USER_DATA_DIR = None
-        PROFILE = None
-        print(f"WebDriver configuration failed: {e}")
-        print("Falling back to QR code login.")
         
-        # Launch Edge without persistent configuration
-        driver = webdriver.Edge()
-
-    driver.maximize_window()
     driver.get('https://web.whatsapp.com/')
-    print("Please scan the QR code to log in to WhatsApp Web.")
-    #time.sleep(20)  # Wait for the user to log in
+    driver.maximize_window()
+    
+    #print("Please scan the QR code to log in to WhatsApp Web.")
 
-    # Search for the group
     try:
-        group_element = driver.find_element(By.XPATH, f'//*[@title="{group_name}"]')
+        group_element = WebDriverWait(driver, 50).until(
+            EC.presence_of_element_located((By.XPATH, f'//*[@title="{group_name}"]'))
+        )
         group_element.click()
     except Exception as e:
-        print("WhatsApp group doesn't exist. Please check the group name.")
+        print(f"Error finding the group '{group_name}': {e}")
         driver.quit()
         return
 
-    # Open group info menu manually
-    print("Please manually open the group info menu.")
-    input("Press Enter once you have clicked \"Add Participants\" button ...")
+    print("Please manually open the group info menu and click 'Add Participants'.")
+    input("Press Enter once ready...")
 
-    # Add members to the group
-    add_members(driver, phone_numbers)
-
-    # Close the browser
+    add_members_re_re(driver, phone_numbers)
     driver.quit()
 
-# Get group name from the user
 group_name = input("Enter the name of the WhatsApp group you want to add people to: ")
 group_add(group_name)
