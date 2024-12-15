@@ -9,53 +9,66 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 def add_members(driver, phone_numbers):
     MAX_RETRIES = 1
     for phone_number in phone_numbers:
         retry_count = 0
         while retry_count < MAX_RETRIES:
             try:
-                print(f"Attempting to add {phone_number} (try {retry_count+1}/{MAX_RETRIES})...")
+                print(f"Attempting to add {phone_number} (try {retry_count + 1}/{MAX_RETRIES})...")
 
                 # Locate and clear the search bar
                 search_bar = WebDriverWait(driver, 3).until(
                     EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
                 )
                 search_bar.click()
-                search_bar.send_keys(Keys.CONTROL + "a")
-                search_bar.send_keys(Keys.BACKSPACE)
-                search_bar.send_keys(phone_number)
+                search_bar.send_keys(Keys.CONTROL + "a")  # Select all text
+                search_bar.send_keys(Keys.BACKSPACE)  # Clear the search bar
+                search_bar.send_keys(phone_number)  # Enter the phone number
 
-                # Wait for search results
-                search_result = WebDriverWait(driver, 3).until(
-                    EC.presence_of_element_located((By.XPATH, '//div[@role="option"]'))
-                )
-
-                # Check for "Already added" status
-                already_added = search_result.find_elements(By.XPATH, './/span[contains(text(), "already added")]')
-                if already_added:
-                    print(f"Contact {phone_number} is already in the group. Skipping.")
+                # Wait for search results or timeout
+                try:
+                    search_result = WebDriverWait(driver, 3).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@role="option"]'))
+                    )
+                    print(f"Search result found for {phone_number}.")
+                except Exception:
+                    print(f"No search result for {phone_number}. Skipping.")
                     break
 
-                # Click the contact to add
-                search_result.click()
-                print(f"Selected contact {phone_number}.")
+                # Check for a checkable box in the search result
+                try:
+                    checkable_box = WebDriverWait(search_result, 2).until(
+                        EC.presence_of_element_located((By.XPATH, './/input[@type="checkbox"]'))
+                    )
+                    checkable_box.click()
+                    print(f"Checkable box selected for {phone_number}.")
+                except Exception:
+                    print(f"No checkable box found for {phone_number}. Skipping.")
+                    break
+
+                # Move to the next contact
                 break  # Success, move to next phone number
 
             except Exception as e:
                 retry_count += 1
                 if retry_count == MAX_RETRIES:
-                    print(f"Failed to add {phone_number} after {MAX_RETRIES} attempts:")# {e}
+                    print(f"Failed to add {phone_number} after {MAX_RETRIES} attempts.")
 
     # Confirm additions
     try:
-        confirm_button = WebDriverWait(driver, 10).until(
+        confirm_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.XPATH, '//span[@data-icon="checkmark-light"]'))
         )
         confirm_button.click()
         print("All contacts added successfully.")
     except Exception as e:
-        print(f"Failed to confirm additions") #{e}
+        print(f"Failed to confirm additions.")
 
 def group_add(group_name):
     phone_numbers = []
